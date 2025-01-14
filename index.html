@@ -70,18 +70,16 @@
     /* 常驻任务容器 */
     #taskList .task {
       display: flex;
-      flex-wrap: wrap; /* 小屏幕下自动换行 */
+      flex-wrap: wrap; /* 默认允许换行 */
       align-items: center;
       margin-bottom: 15px;
       gap: 10px;
       padding: 10px;
       border-bottom: 1px solid #eee;
     }
-    /* 任务标题不再固定宽度，使小屏可自动换行 */
     .task-title {
       font-weight: bold;
     }
-    /* 输入框、按钮等统一处理 */
     .task-value {
       width: 80px;
       text-align: center;
@@ -114,14 +112,12 @@
       display: inline-block;
       width: 20px;
       text-align: center;
-      color: red; /* 初始为红色 × */
+      color: red;
     }
     .complete {
       color: green !important;
       font-weight: bold;
     }
-
-    /* 增加常驻任务按钮 */
     .add-new-task-btn {
       display: block;
       margin: 0 auto 20px auto;
@@ -136,18 +132,16 @@
     .add-new-task-btn:hover {
       background: #357ae8;
     }
-
-    /* 底部完成提示 */
     #completeMessage {
       text-align: center;
       font-size: 1rem;
       color: green;
       font-weight: bold;
-      display: none; /* 默认隐藏 */
+      display: none;
       margin-top: 10px;
     }
 
-    /* 响应式 - 更小的屏幕下，适度缩小字体等 */
+    /* 响应式 - 更小的屏幕下调整布局 */
     @media (max-width: 600px) {
       h1 {
         font-size: 1.2rem;
@@ -169,6 +163,11 @@
       .delete-btn {
         font-size: 0.85rem;
       }
+      /* 在小屏幕下将任务改为垂直堆叠布局，避免不美观的换行 */
+      #taskList .task {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
@@ -178,24 +177,19 @@
     <em>不积硅步，无以至千里。</em>
   </div>
 
-  <!-- 饮食额度专属栏目（非任务） -->
   <div class="spending-container">
     <h2>饮食额度记录</h2>
     <div class="spending-task">
       <label for="spendingValue">饮食额度：</label>
-      <!-- 不再 readonly，让用户可直接输入数值 -->
       <input id="spendingValue" class="spending-value" type="number" value="0" step="any" />
       <span>元</span>
       <button id="spendingAddBtn" class="add-btn">+</button>
     </div>
   </div>
 
-  <!-- 任务列表 -->
   <div class="container" id="taskList">
-    <!-- 1. 晒太阳 (45min)，需要≥45才完成 -->
     <div class="task" data-required="45" data-unit="min" data-condition="above">
       <div class="task-title">晒太阳 (45min)</div>
-      <!-- 不再 readonly，让用户可直接输入数值 -->
       <input class="task-value" type="number" value="0" step="any" />
       <span class="unit-label">min</span>
       <button class="add-btn">+</button>
@@ -205,7 +199,6 @@
       <button class="delete-btn">删除</button>
     </div>
 
-    <!-- 2. 英语 (30min)，需要≥30才完成 -->
     <div class="task" data-required="30" data-unit="min" data-condition="above">
       <div class="task-title">英语 (30min)</div>
       <input class="task-value" type="number" value="0" step="any" />
@@ -217,7 +210,6 @@
       <button class="delete-btn">删除</button>
     </div>
 
-    <!-- 3. 抖腿 (15min)，需要≥15才完成 -->
     <div class="task" data-required="15" data-unit="min" data-condition="above">
       <div class="task-title">抖腿 (15min)</div>
       <input class="task-value" type="number" value="0" step="any" />
@@ -229,7 +221,6 @@
       <button class="delete-btn">删除</button>
     </div>
 
-    <!-- 4. 弹力棒 (6min)，需要≥6才完成 -->
     <div class="task" data-required="6" data-unit="min" data-condition="above">
       <div class="task-title">弹力棒 (6min)</div>
       <input class="task-value" type="number" value="0" step="any" />
@@ -241,7 +232,6 @@
       <button class="delete-btn">删除</button>
     </div>
 
-    <!-- 5. 金刚功 (5min)，需要≥5才完成 -->
     <div class="task" data-required="5" data-unit="min" data-condition="above">
       <div class="task-title">金刚功 (5min)</div>
       <input class="task-value" type="number" value="0" step="any" />
@@ -254,28 +244,20 @@
     </div>
   </div>
 
-  <!-- “增加常驻任务”按钮 -->
   <button class="add-new-task-btn" id="addNewTaskBtn">增加常驻任务</button>
-
-  <!-- 当所有任务完成时，显示此提示 -->
   <div id="completeMessage">你已完成所有常驻任务！</div>
 
   <script>
-    /**
-     * 根据当前数值和任务的阈值/完成条件，自动更新勾选状态
-     * @param {HTMLElement} taskElement 任务的 DOM 元素
-     */
     function updateTaskCompletionStatus(taskElement) {
       const checkBox = taskElement.querySelector('.checkbox');
       const checkMark = taskElement.querySelector('.checkmark');
       const valueInput = taskElement.querySelector('.task-value');
 
       const required = parseFloat(taskElement.getAttribute('data-required'));
-      const condition = taskElement.getAttribute('data-condition'); // "above" / "below"
+      const condition = taskElement.getAttribute('data-condition'); 
       const currentValue = parseFloat(valueInput.value);
 
       if (condition === 'above') {
-        // >= 阈值 => 完成
         if (currentValue >= required) {
           checkBox.checked = true;
           checkMark.textContent = '√';
@@ -286,7 +268,6 @@
           checkMark.classList.remove('complete');
         }
       } else if (condition === 'below') {
-        // < 阈值 => 完成
         if (currentValue < required) {
           checkBox.checked = true;
           checkMark.textContent = '√';
@@ -299,9 +280,6 @@
       }
     }
 
-    /**
-     * 检查所有任务是否都完成，若是则显示提示信息
-     */
     function checkAllTasksCompleted() {
       const allTasks = document.querySelectorAll('#taskList .task');
       for (let i = 0; i < allTasks.length; i++) {
@@ -314,9 +292,6 @@
       document.getElementById('completeMessage').style.display = 'block';
     }
 
-    /**
-     * 为单个“任务”元素绑定事件
-     */
     function setTaskEventListeners(taskElement) {
       const valueInput = taskElement.querySelector('.task-value');
       const addButton = taskElement.querySelector('.add-btn');
@@ -325,17 +300,13 @@
       const editBtn = taskElement.querySelector('.edit-btn');
       const deleteBtn = taskElement.querySelector('.delete-btn');
 
-      // 1. 任务初始化 - 判断初始值是否完成
       updateTaskCompletionStatus(taskElement);
 
-      // 2. 输入框直接修改 => 变动时更新状态
       valueInput.addEventListener('input', function () {
-        // 每次用户在输入框直接输入数值时，实时检查
         updateTaskCompletionStatus(taskElement);
         checkAllTasksCompleted();
       });
 
-      // 3. 点击 "+" 按钮 => 累加数值后更新
       addButton.addEventListener('click', function () {
         const currentValue = parseFloat(valueInput.value) || 0;
         const userInput = prompt('请输入增加的量（支持小数）：', '0');
@@ -349,7 +320,6 @@
         }
       });
 
-      // 4. 手动勾选/取消勾选
       checkBox.addEventListener('change', function () {
         if (checkBox.checked) {
           checkMark.textContent = '√';
@@ -361,18 +331,15 @@
         checkAllTasksCompleted();
       });
 
-      // 5. “修改”按钮
       editBtn.addEventListener('click', function () {
         const oldTitle = taskElement.querySelector('.task-title').innerText;
         const oldRequired = parseFloat(taskElement.getAttribute('data-required'));
         const oldUnit = taskElement.getAttribute('data-unit') || 'min';
         const oldCondition = taskElement.getAttribute('data-condition') || 'above';
 
-        // (1) 修改任务名称
         const newTaskName = prompt('请输入新的任务名称：', oldTitle.split(' (')[0] || '新任务');
         if (newTaskName === null) return;
 
-        // (2) 修改阈值
         const newRequiredStr = prompt('请输入新的阈值（支持小数）：', oldRequired.toString());
         if (newRequiredStr === null) return;
         const newRequired = parseFloat(newRequiredStr);
@@ -381,11 +348,9 @@
           return;
         }
 
-        // (3) 修改单位
         const newUnit = prompt('请输入新的单位(如 min / 元 / 次)：', oldUnit);
         if (newUnit === null) return;
 
-        // (4) 修改完成条件
         const conditionTips = `请输入完成条件:
 - above：数值 ≥ 阈值才完成
 - below：数值 < 阈值才完成`;
@@ -396,19 +361,16 @@
           return;
         }
 
-        // 更新 DOM
         taskElement.setAttribute('data-required', newRequired.toString());
         taskElement.setAttribute('data-unit', newUnit);
         taskElement.setAttribute('data-condition', newCondition);
         taskElement.querySelector('.task-title').innerText = `${newTaskName} (${newRequired}${newUnit})`;
         taskElement.querySelector('.unit-label').innerText = newUnit;
 
-        // 更新状态
         updateTaskCompletionStatus(taskElement);
         checkAllTasksCompleted();
       });
 
-      // 6. “删除”按钮
       deleteBtn.addEventListener('click', function () {
         if (confirm('确认要删除该任务吗？')) {
           taskElement.remove();
@@ -417,17 +379,14 @@
       });
     }
 
-    // =============== 初始化：为页面上已有的任务绑定事件 ===============
     document.querySelectorAll('#taskList .task').forEach(task => {
       setTaskEventListeners(task);
     });
 
-    // =============== “增加常驻任务”功能 ===============
     const addNewTaskBtn = document.getElementById('addNewTaskBtn');
     const taskList = document.getElementById('taskList');
 
     addNewTaskBtn.addEventListener('click', function () {
-      // 1. 获取新任务参数
       const taskName = prompt('请输入新任务名称：', '新任务');
       if (taskName === null) return;
 
@@ -452,7 +411,6 @@
         return;
       }
 
-      // 2. 创建任务 DOM
       const newTask = document.createElement('div');
       newTask.classList.add('task');
       newTask.setAttribute('data-required', requiredNum.toString());
@@ -469,22 +427,13 @@
         <button class="delete-btn">删除</button>
       `;
 
-      // 3. 添加到列表中
       taskList.appendChild(newTask);
-
-      // 4. 绑定事件并检查完成
       setTaskEventListeners(newTask);
       checkAllTasksCompleted();
     });
 
-    // =============== “饮食额度”增量功能 + 用户可直接输入 ===============
     const spendingValueInput = document.getElementById('spendingValue');
     const spendingAddBtn = document.getElementById('spendingAddBtn');
-
-    // 用户手动输入（若有需要监听变化，可在此加事件）
-    // spendingValueInput.addEventListener('input', function () {
-    //   // 示例：仅记录值，不做判定
-    // });
 
     spendingAddBtn.addEventListener('click', function () {
       const currentValue = parseFloat(spendingValueInput.value) || 0;
