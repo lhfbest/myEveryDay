@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>常驻任务管理</title>
-  <!-- 移动端自适应 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     /* 通用样式与基本布局 */
@@ -20,7 +19,6 @@
       color: #333;
       padding: 10px;
     }
-
     h1 {
       text-align: center;
       margin: 10px 0;
@@ -33,8 +31,6 @@
       color: #666;
       font-size: 0.95rem;
     }
-
-    /* 饮食额度板块容器 */
     .spending-container, 
     .container {
       background: #ffffff;
@@ -48,11 +44,9 @@
       margin-bottom: 15px;
       font-size: 1.1rem;
     }
-
-    /* 饮食额度的排版 */
     .spending-task {
       display: flex;
-      flex-wrap: wrap; /* 小屏幕自动换行 */
+      flex-wrap: wrap;
       align-items: center;
       gap: 10px;
     }
@@ -66,19 +60,28 @@
       padding: 5px;
       font-size: 1rem;
     }
-
-    /* 常驻任务容器 */
-    #taskList .task {
+    /* 常驻任务布局调整 */
+    .task {
       display: flex;
-      flex-wrap: wrap; /* 默认允许换行 */
-      align-items: center;
-      margin-bottom: 15px;
-      gap: 10px;
+      flex-direction: column;
       padding: 10px;
       border-bottom: 1px solid #eee;
+      gap: 5px;
+    }
+    .task-main {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .task-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 5px;
     }
     .task-title {
       font-weight: bold;
+      white-space: nowrap;
     }
     .task-value {
       width: 80px;
@@ -95,6 +98,7 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       background: #fff;
+      flex-shrink: 0;
     }
     .add-btn:hover,
     .edit-btn:hover,
@@ -105,18 +109,22 @@
       width: 20px;
       height: 20px;
       cursor: pointer;
+      flex-shrink: 0;
     }
     .checkmark {
       font-size: 20px;
       line-height: 20px;
-      display: inline-block;
       width: 20px;
       text-align: center;
       color: red;
+      flex-shrink: 0;
     }
     .complete {
       color: green !important;
       font-weight: bold;
+    }
+    .unit-label {
+      flex-shrink: 0;
     }
     .add-new-task-btn {
       display: block;
@@ -140,34 +148,12 @@
       display: none;
       margin-top: 10px;
     }
-
-    /* 响应式 - 更小的屏幕下调整布局 */
     @media (max-width: 600px) {
-      h1 {
-        font-size: 1.2rem;
-      }
-      .motto {
-        font-size: 0.9rem;
-      }
-      .spending-container h2 {
-        font-size: 1rem;
-      }
-      .task-value {
-        width: 70px;
-      }
-      .spending-value {
-        width: 70px;
-      }
-      .add-btn,
-      .edit-btn,
-      .delete-btn {
-        font-size: 0.85rem;
-      }
-      /* 在小屏幕下将任务改为垂直堆叠布局，避免不美观的换行 */
-      #taskList .task {
-        flex-direction: column;
-        align-items: flex-start;
-      }
+      h1 { font-size: 1.2rem; }
+      .motto { font-size: 0.9rem; }
+      .spending-container h2 { font-size: 1rem; }
+      .task-value, .spending-value { width: 70px; }
+      .add-btn, .edit-btn, .delete-btn { font-size: 0.85rem; }
     }
   </style>
 </head>
@@ -188,59 +174,80 @@
   </div>
 
   <div class="container" id="taskList">
+    <!-- 示例任务 -->
     <div class="task" data-required="45" data-unit="min" data-condition="above">
-      <div class="task-title">晒太阳 (45min)</div>
-      <input class="task-value" type="number" value="0" step="any" />
-      <span class="unit-label">min</span>
-      <button class="add-btn">+</button>
-      <input class="checkbox" type="checkbox" />
-      <span class="checkmark">×</span>
-      <button class="edit-btn">修改</button>
-      <button class="delete-btn">删除</button>
+      <div class="task-main">
+        <div class="task-title">晒太阳 (45min)</div>
+        <input class="task-value" type="number" value="0" step="any" />
+        <span class="unit-label">min</span>
+        <button class="add-btn">+</button>
+        <input class="checkbox" type="checkbox" />
+        <span class="checkmark">×</span>
+      </div>
+      <div class="task-actions">
+        <button class="edit-btn">修改</button>
+        <button class="delete-btn">删除</button>
+      </div>
     </div>
 
     <div class="task" data-required="30" data-unit="min" data-condition="above">
-      <div class="task-title">英语 (30min)</div>
-      <input class="task-value" type="number" value="0" step="any" />
-      <span class="unit-label">min</span>
-      <button class="add-btn">+</button>
-      <input class="checkbox" type="checkbox" />
-      <span class="checkmark">×</span>
-      <button class="edit-btn">修改</button>
-      <button class="delete-btn">删除</button>
+      <div class="task-main">
+        <div class="task-title">英语 (30min)</div>
+        <input class="task-value" type="number" value="0" step="any" />
+        <span class="unit-label">min</span>
+        <button class="add-btn">+</button>
+        <input class="checkbox" type="checkbox" />
+        <span class="checkmark">×</span>
+      </div>
+      <div class="task-actions">
+        <button class="edit-btn">修改</button>
+        <button class="delete-btn">删除</button>
+      </div>
     </div>
 
     <div class="task" data-required="15" data-unit="min" data-condition="above">
-      <div class="task-title">抖腿 (15min)</div>
-      <input class="task-value" type="number" value="0" step="any" />
-      <span class="unit-label">min</span>
-      <button class="add-btn">+</button>
-      <input class="checkbox" type="checkbox" />
-      <span class="checkmark">×</span>
-      <button class="edit-btn">修改</button>
-      <button class="delete-btn">删除</button>
+      <div class="task-main">
+        <div class="task-title">抖腿 (15min)</div>
+        <input class="task-value" type="number" value="0" step="any" />
+        <span class="unit-label">min</span>
+        <button class="add-btn">+</button>
+        <input class="checkbox" type="checkbox" />
+        <span class="checkmark">×</span>
+      </div>
+      <div class="task-actions">
+        <button class="edit-btn">修改</button>
+        <button class="delete-btn">删除</button>
+      </div>
     </div>
 
     <div class="task" data-required="6" data-unit="min" data-condition="above">
-      <div class="task-title">弹力棒 (6min)</div>
-      <input class="task-value" type="number" value="0" step="any" />
-      <span class="unit-label">min</span>
-      <button class="add-btn">+</button>
-      <input class="checkbox" type="checkbox" />
-      <span class="checkmark">×</span>
-      <button class="edit-btn">修改</button>
-      <button class="delete-btn">删除</button>
+      <div class="task-main">
+        <div class="task-title">弹力棒 (6min)</div>
+        <input class="task-value" type="number" value="0" step="any" />
+        <span class="unit-label">min</span>
+        <button class="add-btn">+</button>
+        <input class="checkbox" type="checkbox" />
+        <span class="checkmark">×</span>
+      </div>
+      <div class="task-actions">
+        <button class="edit-btn">修改</button>
+        <button class="delete-btn">删除</button>
+      </div>
     </div>
 
     <div class="task" data-required="5" data-unit="min" data-condition="above">
-      <div class="task-title">金刚功 (5min)</div>
-      <input class="task-value" type="number" value="0" step="any" />
-      <span class="unit-label">min</span>
-      <button class="add-btn">+</button>
-      <input class="checkbox" type="checkbox" />
-      <span class="checkmark">×</span>
-      <button class="edit-btn">修改</button>
-      <button class="delete-btn">删除</button>
+      <div class="task-main">
+        <div class="task-title">金刚功 (5min)</div>
+        <input class="task-value" type="number" value="0" step="any" />
+        <span class="unit-label">min</span>
+        <button class="add-btn">+</button>
+        <input class="checkbox" type="checkbox" />
+        <span class="checkmark">×</span>
+      </div>
+      <div class="task-actions">
+        <button class="edit-btn">修改</button>
+        <button class="delete-btn">删除</button>
+      </div>
     </div>
   </div>
 
@@ -252,11 +259,9 @@
       const checkBox = taskElement.querySelector('.checkbox');
       const checkMark = taskElement.querySelector('.checkmark');
       const valueInput = taskElement.querySelector('.task-value');
-
       const required = parseFloat(taskElement.getAttribute('data-required'));
-      const condition = taskElement.getAttribute('data-condition'); 
+      const condition = taskElement.getAttribute('data-condition');
       const currentValue = parseFloat(valueInput.value);
-
       if (condition === 'above') {
         if (currentValue >= required) {
           checkBox.checked = true;
@@ -336,10 +341,8 @@
         const oldRequired = parseFloat(taskElement.getAttribute('data-required'));
         const oldUnit = taskElement.getAttribute('data-unit') || 'min';
         const oldCondition = taskElement.getAttribute('data-condition') || 'above';
-
         const newTaskName = prompt('请输入新的任务名称：', oldTitle.split(' (')[0] || '新任务');
         if (newTaskName === null) return;
-
         const newRequiredStr = prompt('请输入新的阈值（支持小数）：', oldRequired.toString());
         if (newRequiredStr === null) return;
         const newRequired = parseFloat(newRequiredStr);
@@ -347,10 +350,8 @@
           alert('阈值输入不合法！');
           return;
         }
-
         const newUnit = prompt('请输入新的单位(如 min / 元 / 次)：', oldUnit);
         if (newUnit === null) return;
-
         const conditionTips = `请输入完成条件:
 - above：数值 ≥ 阈值才完成
 - below：数值 < 阈值才完成`;
@@ -360,13 +361,11 @@
           alert('只能填 above 或 below！');
           return;
         }
-
         taskElement.setAttribute('data-required', newRequired.toString());
         taskElement.setAttribute('data-unit', newUnit);
         taskElement.setAttribute('data-condition', newCondition);
         taskElement.querySelector('.task-title').innerText = `${newTaskName} (${newRequired}${newUnit})`;
         taskElement.querySelector('.unit-label').innerText = newUnit;
-
         updateTaskCompletionStatus(taskElement);
         checkAllTasksCompleted();
       });
@@ -389,7 +388,6 @@
     addNewTaskBtn.addEventListener('click', function () {
       const taskName = prompt('请输入新任务名称：', '新任务');
       if (taskName === null) return;
-
       const requiredStr = prompt('请输入阈值（支持小数）：', '10');
       if (requiredStr === null) return;
       const requiredNum = parseFloat(requiredStr);
@@ -397,10 +395,8 @@
         alert('请输入正确的数字！');
         return;
       }
-
       const unit = prompt('请输入单位(如 min / 元 / 次)：', 'min');
       if (unit === null) return;
-
       const conditionTips = `请输入完成条件:
 - above：数值 ≥ 阈值才完成
 - below：数值 < 阈值才完成`;
@@ -410,23 +406,25 @@
         alert('只能是 above 或 below');
         return;
       }
-
       const newTask = document.createElement('div');
       newTask.classList.add('task');
       newTask.setAttribute('data-required', requiredNum.toString());
       newTask.setAttribute('data-unit', unit);
       newTask.setAttribute('data-condition', condition);
       newTask.innerHTML = `
-        <div class="task-title">${taskName} (${requiredNum}${unit})</div>
-        <input class="task-value" type="number" value="0" step="any" />
-        <span class="unit-label">${unit}</span>
-        <button class="add-btn">+</button>
-        <input class="checkbox" type="checkbox" />
-        <span class="checkmark">×</span>
-        <button class="edit-btn">修改</button>
-        <button class="delete-btn">删除</button>
+        <div class="task-main">
+          <div class="task-title">${taskName} (${requiredNum}${unit})</div>
+          <input class="task-value" type="number" value="0" step="any" />
+          <span class="unit-label">${unit}</span>
+          <button class="add-btn">+</button>
+          <input class="checkbox" type="checkbox" />
+          <span class="checkmark">×</span>
+        </div>
+        <div class="task-actions">
+          <button class="edit-btn">修改</button>
+          <button class="delete-btn">删除</button>
+        </div>
       `;
-
       taskList.appendChild(newTask);
       setTaskEventListeners(newTask);
       checkAllTasksCompleted();
@@ -434,7 +432,6 @@
 
     const spendingValueInput = document.getElementById('spendingValue');
     const spendingAddBtn = document.getElementById('spendingAddBtn');
-
     spendingAddBtn.addEventListener('click', function () {
       const currentValue = parseFloat(spendingValueInput.value) || 0;
       const userInput = prompt('请输入增加的额度（支持小数）：', '0');
