@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>常驻任务管理</title>
+  <!-- 移动端自适应视口 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     /* 通用样式与基本布局 */
@@ -19,6 +20,7 @@
       color: #333;
       padding: 10px;
     }
+
     h1 {
       text-align: center;
       margin: 10px 0;
@@ -46,7 +48,7 @@
     }
     .spending-task {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: wrap; /* 小屏幕自动换行 */
       align-items: center;
       gap: 10px;
     }
@@ -60,7 +62,7 @@
       padding: 5px;
       font-size: 1rem;
     }
-    /* 常驻任务布局调整 */
+    /* 常驻任务布局: 两行结构 */
     .task {
       display: flex;
       flex-direction: column;
@@ -70,7 +72,7 @@
     }
     .task-main {
       display: flex;
-      flex-wrap: nowrap;
+      flex-wrap: nowrap; /* 尽量一行 */
       align-items: center;
       gap: 8px;
     }
@@ -126,7 +128,7 @@
     .unit-label {
       flex-shrink: 0;
     }
-    .add-new-task-btn {
+    .add-new-task-btn, .archive-btn {
       display: block;
       margin: 0 auto 20px auto;
       font-size: 1rem;
@@ -137,7 +139,7 @@
       background: #4285f4;
       color: #fff;
     }
-    .add-new-task-btn:hover {
+    .add-new-task-btn:hover, .archive-btn:hover {
       background: #357ae8;
     }
     #completeMessage {
@@ -148,10 +150,34 @@
       display: none;
       margin-top: 10px;
     }
+    /* 历史记录容器 */
+    .history-container {
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px #ddd;
+      margin-bottom: 20px;
+    }
+    .history-container h2 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+    }
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .history-entry {
+      padding: 5px 0;
+      border-bottom: 1px dashed #ccc;
+      font-size: 0.95rem;
+    }
+    /* 响应式 - 小屏幕下 */
     @media (max-width: 600px) {
       h1 { font-size: 1.2rem; }
       .motto { font-size: 0.9rem; }
-      .spending-container h2 { font-size: 1rem; }
+      .spending-container h2, .history-container h2 { font-size: 1rem; }
       .task-value, .spending-value { width: 70px; }
       .add-btn, .edit-btn, .delete-btn { font-size: 0.85rem; }
     }
@@ -163,6 +189,7 @@
     <em>不积硅步，无以至千里。</em>
   </div>
 
+  <!-- 饮食额度（不参与完成判定） -->
   <div class="spending-container">
     <h2>饮食额度记录</h2>
     <div class="spending-task">
@@ -173,6 +200,7 @@
     </div>
   </div>
 
+  <!-- 常驻任务列表 -->
   <div class="container" id="taskList">
     <!-- 示例任务 -->
     <div class="task" data-required="45" data-unit="min" data-condition="above">
@@ -251,10 +279,104 @@
     </div>
   </div>
 
+  <!-- 新增任务按钮 -->
   <button class="add-new-task-btn" id="addNewTaskBtn">增加常驻任务</button>
+  <!-- 自动存档按钮 -->
+  <button class="archive-btn" id="archiveBtn">自动存档</button>
+
+  <!-- 全部完成提示 -->
   <div id="completeMessage">你已完成所有常驻任务！</div>
 
+  <!-- 历史记录容器 -->
+  <div class="history-container" id="historyContainer">
+    <h2>历史记录</h2>
+    <div class="history-list" id="historyList">
+      <!-- 每日一行记录 -->
+    </div>
+  </div>
+
   <script>
+    /*******************************************************
+     * 1. 每日归零 & 生成历史记录 
+     *******************************************************/
+    function getTodayDateString() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function getTodayDisplayString() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}年${m}月${d}日`;
+    }
+
+    function recordYesterdayLog() {
+      const spendingValue = document.getElementById('spendingValue').value;
+      const tasks = document.querySelectorAll('#taskList .task');
+      const datePart = getTodayDisplayString();
+      let logLine = `${datePart} 饮食${spendingValue}元`;
+      tasks.forEach(task => {
+        const titleEl = task.querySelector('.task-title');
+        const valueEl = task.querySelector('.task-value');
+        const checkMarkEl = task.querySelector('.checkmark');
+        const unit = task.getAttribute('data-unit');
+        const taskName = titleEl.innerText.split(' (')[0];
+        const currentVal = valueEl.value;
+        const isComplete = (checkMarkEl.textContent === '√') ? '✅' : '❌';
+        logLine += `  ${taskName}${currentVal}${unit}${isComplete}`;
+      });
+      let dailyLogs = JSON.parse(localStorage.getItem('dailyLogs') || '[]');
+      dailyLogs.push(logLine);
+      localStorage.setItem('dailyLogs', JSON.stringify(dailyLogs));
+    }
+
+    function resetAllValues() {
+      document.getElementById('spendingValue').value = 0;
+      const tasks = document.querySelectorAll('#taskList .task');
+      tasks.forEach(task => {
+        const valEl = task.querySelector('.task-value');
+        valEl.value = 0;
+        updateTaskCompletionStatus(task);
+      });
+    }
+
+    function checkNewDayAndHandle() {
+      const todayStr = getTodayDateString();
+      const lastDateStr = localStorage.getItem('lastDate');
+      if (lastDateStr === todayStr) {
+        return;
+      }
+      if (lastDateStr) {
+        recordYesterdayLog();
+      }
+      resetAllValues();
+      localStorage.setItem('lastDate', todayStr);
+      loadHistoryLogs();
+    }
+
+    /*******************************************************
+     * 2. 历史记录UI展示
+     *******************************************************/
+    function loadHistoryLogs() {
+      const dailyLogs = JSON.parse(localStorage.getItem('dailyLogs') || '[]');
+      const historyList = document.getElementById('historyList');
+      historyList.innerHTML = '';
+      dailyLogs.forEach(line => {
+        const div = document.createElement('div');
+        div.classList.add('history-entry');
+        div.textContent = line;
+        historyList.prepend(div);
+      });
+    }
+
+    /*******************************************************
+     * 3. 任务完成判定 & 显示
+     *******************************************************/
     function updateTaskCompletionStatus(taskElement) {
       const checkBox = taskElement.querySelector('.checkbox');
       const checkMark = taskElement.querySelector('.checkmark');
@@ -262,6 +384,7 @@
       const required = parseFloat(taskElement.getAttribute('data-required'));
       const condition = taskElement.getAttribute('data-condition');
       const currentValue = parseFloat(valueInput.value);
+
       if (condition === 'above') {
         if (currentValue >= required) {
           checkBox.checked = true;
@@ -341,8 +464,10 @@
         const oldRequired = parseFloat(taskElement.getAttribute('data-required'));
         const oldUnit = taskElement.getAttribute('data-unit') || 'min';
         const oldCondition = taskElement.getAttribute('data-condition') || 'above';
+
         const newTaskName = prompt('请输入新的任务名称：', oldTitle.split(' (')[0] || '新任务');
         if (newTaskName === null) return;
+
         const newRequiredStr = prompt('请输入新的阈值（支持小数）：', oldRequired.toString());
         if (newRequiredStr === null) return;
         const newRequired = parseFloat(newRequiredStr);
@@ -350,8 +475,10 @@
           alert('阈值输入不合法！');
           return;
         }
+
         const newUnit = prompt('请输入新的单位(如 min / 元 / 次)：', oldUnit);
         if (newUnit === null) return;
+
         const conditionTips = `请输入完成条件:
 - above：数值 ≥ 阈值才完成
 - below：数值 < 阈值才完成`;
@@ -361,11 +488,13 @@
           alert('只能填 above 或 below！');
           return;
         }
+
         taskElement.setAttribute('data-required', newRequired.toString());
         taskElement.setAttribute('data-unit', newUnit);
         taskElement.setAttribute('data-condition', newCondition);
         taskElement.querySelector('.task-title').innerText = `${newTaskName} (${newRequired}${newUnit})`;
         taskElement.querySelector('.unit-label').innerText = newUnit;
+
         updateTaskCompletionStatus(taskElement);
         checkAllTasksCompleted();
       });
@@ -378,70 +507,113 @@
       });
     }
 
-    document.querySelectorAll('#taskList .task').forEach(task => {
-      setTaskEventListeners(task);
-    });
-
-    const addNewTaskBtn = document.getElementById('addNewTaskBtn');
-    const taskList = document.getElementById('taskList');
-
-    addNewTaskBtn.addEventListener('click', function () {
-      const taskName = prompt('请输入新任务名称：', '新任务');
-      if (taskName === null) return;
-      const requiredStr = prompt('请输入阈值（支持小数）：', '10');
-      if (requiredStr === null) return;
-      const requiredNum = parseFloat(requiredStr);
-      if (isNaN(requiredNum)) {
-        alert('请输入正确的数字！');
-        return;
+    /*******************************************************
+     * 新增：自动存档功能
+     *******************************************************/
+    function recordTodayLog() {
+      const spendingValue = document.getElementById('spendingValue').value;
+      const tasks = document.querySelectorAll('#taskList .task');
+      const datePart = getTodayDisplayString();
+      let logLine = `${datePart} 饮食${spendingValue}元`;
+      tasks.forEach(task => {
+        const titleEl = task.querySelector('.task-title');
+        const valueEl = task.querySelector('.task-value');
+        const checkMarkEl = task.querySelector('.checkmark');
+        const unit = task.getAttribute('data-unit');
+        const taskName = titleEl.innerText.split(' (')[0];
+        const currentVal = valueEl.value;
+        const isComplete = (checkMarkEl.textContent === '√') ? '✅' : '❌';
+        logLine += `  ${taskName}${currentVal}${unit}${isComplete}`;
+      });
+      let dailyLogs = JSON.parse(localStorage.getItem('dailyLogs') || '[]');
+      // 如果最后一条记录与今天日期相同，则覆盖之
+      if (dailyLogs.length > 0 && dailyLogs[dailyLogs.length - 1].startsWith(datePart)) {
+        dailyLogs[dailyLogs.length - 1] = logLine;
+      } else {
+        dailyLogs.push(logLine);
       }
-      const unit = prompt('请输入单位(如 min / 元 / 次)：', 'min');
-      if (unit === null) return;
-      const conditionTips = `请输入完成条件:
+      localStorage.setItem('dailyLogs', JSON.stringify(dailyLogs));
+      loadHistoryLogs();
+    }
+
+    /*******************************************************
+     * 4. 页面初始化
+     *******************************************************/
+    function init() {
+      checkNewDayAndHandle();
+      loadHistoryLogs();
+      document.querySelectorAll('#taskList .task').forEach(task => {
+        setTaskEventListeners(task);
+      });
+
+      const addNewTaskBtn = document.getElementById('addNewTaskBtn');
+      addNewTaskBtn.addEventListener('click', function () {
+        const taskName = prompt('请输入新任务名称：', '新任务');
+        if (taskName === null) return;
+
+        const requiredStr = prompt('请输入阈值（支持小数）：', '10');
+        if (requiredStr === null) return;
+        const requiredNum = parseFloat(requiredStr);
+        if (isNaN(requiredNum)) {
+          alert('请输入正确的数字！');
+          return;
+        }
+
+        const unit = prompt('请输入单位(如 min / 元 / 次)：', 'min');
+        if (unit === null) return;
+
+        const conditionTips = `请输入完成条件:
 - above：数值 ≥ 阈值才完成
 - below：数值 < 阈值才完成`;
-      const condition = prompt(conditionTips, 'above');
-      if (condition === null) return;
-      if (condition !== 'above' && condition !== 'below') {
-        alert('只能是 above 或 below');
-        return;
-      }
-      const newTask = document.createElement('div');
-      newTask.classList.add('task');
-      newTask.setAttribute('data-required', requiredNum.toString());
-      newTask.setAttribute('data-unit', unit);
-      newTask.setAttribute('data-condition', condition);
-      newTask.innerHTML = `
-        <div class="task-main">
-          <div class="task-title">${taskName} (${requiredNum}${unit})</div>
-          <input class="task-value" type="number" value="0" step="any" />
-          <span class="unit-label">${unit}</span>
-          <button class="add-btn">+</button>
-          <input class="checkbox" type="checkbox" />
-          <span class="checkmark">×</span>
-        </div>
-        <div class="task-actions">
-          <button class="edit-btn">修改</button>
-          <button class="delete-btn">删除</button>
-        </div>
-      `;
-      taskList.appendChild(newTask);
-      setTaskEventListeners(newTask);
-      checkAllTasksCompleted();
-    });
-
-    const spendingValueInput = document.getElementById('spendingValue');
-    const spendingAddBtn = document.getElementById('spendingAddBtn');
-    spendingAddBtn.addEventListener('click', function () {
-      const currentValue = parseFloat(spendingValueInput.value) || 0;
-      const userInput = prompt('请输入增加的额度（支持小数）：', '0');
-      if (userInput !== null) {
-        const addValue = parseFloat(userInput);
-        if (!isNaN(addValue)) {
-          spendingValueInput.value = currentValue + addValue;
+        const condition = prompt(conditionTips, 'above');
+        if (condition === null) return;
+        if (condition !== 'above' && condition !== 'below') {
+          alert('只能是 above 或 below');
+          return;
         }
-      }
-    });
+
+        const newTask = document.createElement('div');
+        newTask.classList.add('task');
+        newTask.setAttribute('data-required', requiredNum.toString());
+        newTask.setAttribute('data-unit', unit);
+        newTask.setAttribute('data-condition', condition);
+        newTask.innerHTML = `
+          <div class="task-main">
+            <div class="task-title">${taskName} (${requiredNum}${unit})</div>
+            <input class="task-value" type="number" value="0" step="any" />
+            <span class="unit-label">${unit}</span>
+            <button class="add-btn">+</button>
+            <input class="checkbox" type="checkbox" />
+            <span class="checkmark">×</span>
+          </div>
+          <div class="task-actions">
+            <button class="edit-btn">修改</button>
+            <button class="delete-btn">删除</button>
+          </div>
+        `;
+        document.getElementById('taskList').appendChild(newTask);
+        setTaskEventListeners(newTask);
+        checkAllTasksCompleted();
+      });
+
+      const archiveBtn = document.getElementById('archiveBtn');
+      archiveBtn.addEventListener('click', recordTodayLog);
+
+      const spendingAddBtn = document.getElementById('spendingAddBtn');
+      spendingAddBtn.addEventListener('click', function () {
+        const spendingValueInput = document.getElementById('spendingValue');
+        const currentValue = parseFloat(spendingValueInput.value) || 0;
+        const userInput = prompt('请输入增加的额度（支持小数）：', '0');
+        if (userInput !== null) {
+          const addValue = parseFloat(userInput);
+          if (!isNaN(addValue)) {
+            spendingValueInput.value = currentValue + addValue;
+          }
+        }
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 </html>
