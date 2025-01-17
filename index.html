@@ -55,7 +55,7 @@
       min-width: 100px;
       font-weight: bold;
     }
-    .spending-value {
+    .spending-value, .time-input {
       width: 90px;
       text-align: center;
       padding: 5px;
@@ -196,9 +196,17 @@
       <span>元</span>
       <button id="spendingAddBtn" class="add-btn">+</button>
     </div>
+    <div class="spending-task">
+      <label for="wakeUpTime">起床时间：</label>
+      <input id="wakeUpTime" class="time-input" type="time" />
+    </div>
+    <div class="spending-task">
+      <label for="shutDownTime">关机时间：</label>
+      <input id="shutDownTime" class="time-input" type="time" />
+    </div>
   </div>
 
-  <div class="container" id="taskList">
+ <div class="container" id="taskList">
     <div class="task" data-required="30" data-unit="min" data-condition="above">
       <div class="task-main">
         <div class="task-title">晒太阳 (30min)</div>
@@ -275,14 +283,14 @@
     </div>
   </div>
 
+
   <button class="add-new-task-btn" id="addNewTaskBtn">增加常驻任务</button>
   <button class="archive-btn" id="archiveBtn">自动存档</button>
   <div id="completeMessage">你已完成所有常驻任务！</div>
 
   <div class="history-container" id="historyContainer">
     <h2>历史记录</h2>
-    <div class="history-list" id="historyList">
-    </div>
+    <div class="history-list" id="historyList"></div>
   </div>
 
   <script>
@@ -302,293 +310,135 @@
     }
     function recordYesterdayLog() {
       const spendingValue = document.getElementById('spendingValue').value;
+      const wakeUpTime = document.getElementById('wakeUpTime').value;
+      const shutDownTime = document.getElementById('shutDownTime').value;
       const tasks = document.querySelectorAll('#taskList .task');
       const datePart = getTodayDisplayString();
-      let logLine = `${datePart} 饮食${spendingValue}元`;
+      let logLine = `${datePart} 饮食${spendingValue}元  起床时间：${wakeUpTime} 关机时间：${shutDownTime}`;
       tasks.forEach(task => {
         const titleEl = task.querySelector('.task-title');
         const valueEl = task.querySelector('.task-value');
         const checkMarkEl = task.querySelector('.checkmark');
-        const unit = task.getAttribute('data-unit');
-        const taskName = titleEl.innerText.split(' (')[0];
-        const currentVal = valueEl.value;
-        const isComplete = (checkMarkEl.textContent === '√') ? '✅' : '❌';
-        logLine += `  ${taskName}${currentVal}${unit}${isComplete}`;
+        const title = titleEl.textContent;
+        const value = valueEl.value;
+        const isComplete = checkMarkEl.classList.contains('complete') ? '✔️' : '❌';
+        logLine += `，任务：${title} ${isComplete} 数值：${value}`;
       });
-      let dailyLogs = JSON.parse(localStorage.getItem('dailyLogs') || '[]');
-      dailyLogs.push(logLine);
-      localStorage.setItem('dailyLogs', JSON.stringify(dailyLogs));
-    }
-    function resetAllValues() {
-      document.getElementById('spendingValue').value = 0;
-      const tasks = document.querySelectorAll('#taskList .task');
-      tasks.forEach(task => {
-        const valEl = task.querySelector('.task-value');
-        valEl.value = 0;
-        updateTaskCompletionStatus(task);
-      });
-    }
-    function checkNewDayAndHandle() {
-      const todayStr = getTodayDateString();
-      const lastDateStr = localStorage.getItem('lastDate');
-      if (lastDateStr === todayStr) {
-        return;
-      }
-      if (lastDateStr) {
-        recordYesterdayLog();
-      }
-      resetAllValues();
-      localStorage.setItem('lastDate', todayStr);
-      loadHistoryLogs();
-    }
-    function loadHistoryLogs() {
-      const dailyLogs = JSON.parse(localStorage.getItem('dailyLogs') || '[]');
+
       const historyList = document.getElementById('historyList');
-      historyList.innerHTML = '';
-      dailyLogs.forEach(line => {
-        const div = document.createElement('div');
-        div.classList.add('history-entry');
-        div.textContent = line;
-        historyList.prepend(div);
-      });
+      const historyEntry = document.createElement('div');
+      historyEntry.classList.add('history-entry');
+      historyEntry.textContent = logLine;
+      historyList.prepend(historyEntry); // 添加到最前面
+
+      // 重置表单
+      document.getElementById('spendingValue').value = '';
+      document.getElementById('wakeUpTime').value = '';
+      document.getElementById('shutDownTime').value = '';
     }
-    function updateTaskCompletionStatus(taskElement) {
-      const checkBox = taskElement.querySelector('.checkbox');
-      const checkMark = taskElement.querySelector('.checkmark');
-      const valueInput = taskElement.querySelector('.task-value');
-      const required = parseFloat(taskElement.getAttribute('data-required'));
-      const condition = taskElement.getAttribute('data-condition');
-      const currentValue = parseFloat(valueInput.value);
-      if (condition === 'above') {
-        if (currentValue >= required) {
-          checkBox.checked = true;
-          checkMark.textContent = '√';
-          checkMark.classList.add('complete');
-        } else {
-          checkBox.checked = false;
-          checkMark.textContent = '×';
-          checkMark.classList.remove('complete');
-        }
-      } else if (condition === 'below') {
-        if (currentValue < required) {
-          checkBox.checked = true;
-          checkMark.textContent = '√';
-          checkMark.classList.add('complete');
-        } else {
-          checkBox.checked = false;
-          checkMark.textContent = '×';
-          checkMark.classList.remove('complete');
-        }
-      }
-    }
-    function checkAllTasksCompleted() {
-      const allTasks = document.querySelectorAll('#taskList .task');
-      for (let i = 0; i < allTasks.length; i++) {
-        const chk = allTasks[i].querySelector('.checkbox');
-        if (!chk.checked) {
-          document.getElementById('completeMessage').style.display = 'none';
-          return;
-        }
-      }
-      document.getElementById('completeMessage').style.display = 'block';
-    }
-    function saveValues() {
-      const values = [];
-      document.querySelectorAll('#taskList .task').forEach(task => {
-        const val = task.querySelector('.task-value').value;
-        values.push(val);
-      });
-      localStorage.setItem('taskValues', JSON.stringify(values));
-      localStorage.setItem('spendingValueSaved', document.getElementById('spendingValue').value);
-    }
-    function loadValues() {
-      const savedValues = JSON.parse(localStorage.getItem('taskValues') || '[]');
-      const tasks = document.querySelectorAll('#taskList .task');
-      savedValues.forEach((val, index) => {
-        if (tasks[index]) {
-          tasks[index].querySelector('.task-value').value = val;
-          updateTaskCompletionStatus(tasks[index]);
-        }
-      });
-      const spendingSaved = localStorage.getItem('spendingValueSaved');
-      if (spendingSaved !== null) {
-        document.getElementById('spendingValue').value = spendingSaved;
-      }
-      checkAllTasksCompleted();
-    }
-    function setTaskEventListeners(taskElement) {
-      const valueInput = taskElement.querySelector('.task-value');
-      const addButton = taskElement.querySelector('.add-btn');
-      const checkBox = taskElement.querySelector('.checkbox');
-      const checkMark = taskElement.querySelector('.checkmark');
-      const editBtn = taskElement.querySelector('.edit-btn');
-      const deleteBtn = taskElement.querySelector('.delete-btn');
-      updateTaskCompletionStatus(taskElement);
-      valueInput.addEventListener('input', function () {
-        updateTaskCompletionStatus(taskElement);
-        checkAllTasksCompleted();
-        saveValues();
-      });
-      addButton.addEventListener('click', function () {
-        const currentValue = parseFloat(valueInput.value) || 0;
-        const userInput = prompt('请输入增加的量（支持小数）：', '0');
-        if (userInput !== null) {
-          const addValue = parseFloat(userInput);
-          if (!isNaN(addValue)) {
-            valueInput.value = currentValue + addValue;
-            updateTaskCompletionStatus(taskElement);
-            checkAllTasksCompleted();
-            saveValues();
-          }
-        }
-      });
-      checkBox.addEventListener('change', function () {
-        if (checkBox.checked) {
-          checkMark.textContent = '√';
-          checkMark.classList.add('complete');
-        } else {
-          checkMark.textContent = '×';
-          checkMark.classList.remove('complete');
-        }
-        checkAllTasksCompleted();
-        saveValues();
-      });
-      editBtn.addEventListener('click', function () {
-        const oldTitle = taskElement.querySelector('.task-title').innerText;
-        const oldRequired = parseFloat(taskElement.getAttribute('data-required'));
-        const oldUnit = taskElement.getAttribute('data-unit') || 'min';
-        const oldCondition = taskElement.getAttribute('data-condition') || 'above';
-        const newTaskName = prompt('请输入新的任务名称：', oldTitle.split(' (')[0] || '新任务');
-        if (newTaskName === null) return;
-        const newRequiredStr = prompt('请输入新的阈值（支持小数）：', oldRequired.toString());
-        if (newRequiredStr === null) return;
-        const newRequired = parseFloat(newRequiredStr);
-        if (isNaN(newRequired)) {
-          alert('阈值输入不合法！');
-          return;
-        }
-        const newUnit = prompt('请输入新的单位(如 min / 元 / 次)：', oldUnit);
-        if (newUnit === null) return;
-        const conditionTips = `请输入完成条件:
-- above：数值 ≥ 阈值才完成
-- below：数值 < 阈值才完成`;
-        const newCondition = prompt(conditionTips, oldCondition);
-        if (newCondition === null) return;
-        if (newCondition !== 'above' && newCondition !== 'below') {
-          alert('只能填 above 或 below！');
-          return;
-        }
-        taskElement.setAttribute('data-required', newRequired.toString());
-        taskElement.setAttribute('data-unit', newUnit);
-        taskElement.setAttribute('data-condition', newCondition);
-        taskElement.querySelector('.task-title').innerText = `${newTaskName} (${newRequired}${newUnit})`;
-        taskElement.querySelector('.unit-label').innerText = newUnit;
-        updateTaskCompletionStatus(taskElement);
-        checkAllTasksCompleted();
-        saveValues();
-      });
-      deleteBtn.addEventListener('click', function () {
-        if (confirm('确认要删除该任务吗？')) {
-          taskElement.remove();
-          checkAllTasksCompleted();
-          saveValues();
-        }
-      });
-    }
-    function recordTodayLog() {
-      const spendingValue = document.getElementById('spendingValue').value;
-      const tasks = document.querySelectorAll('#taskList .task');
-      const datePart = getTodayDisplayString();
-      let logLine = `${datePart} 饮食${spendingValue}元`;
-      tasks.forEach(task => {
-        const titleEl = task.querySelector('.task-title');
-        const valueEl = task.querySelector('.task-value');
-        const checkMarkEl = task.querySelector('.checkmark');
-        const unit = task.getAttribute('data-unit');
-        const taskName = titleEl.innerText.split(' (')[0];
-        const currentVal = valueEl.value;
-        const isComplete = (checkMarkEl.textContent === '√') ? '✅' : '❌';
-        logLine += `  ${taskName}${currentVal}${unit}${isComplete}`;
-      });
-      let dailyLogs = JSON.parse(localStorage.getItem('dailyLogs') || '[]');
-      if (dailyLogs.length > 0 && dailyLogs[dailyLogs.length - 1].startsWith(datePart)) {
-        dailyLogs[dailyLogs.length - 1] = logLine;
-      } else {
-        dailyLogs.push(logLine);
-      }
-      localStorage.setItem('dailyLogs', JSON.stringify(dailyLogs));
-      loadHistoryLogs();
-    }
-    function init() {
-      checkNewDayAndHandle();
-      loadHistoryLogs();
-      document.querySelectorAll('#taskList .task').forEach(task => {
-        setTaskEventListeners(task);
-      });
-      loadValues();
-      const addNewTaskBtn = document.getElementById('addNewTaskBtn');
-      addNewTaskBtn.addEventListener('click', function () {
-        const taskName = prompt('请输入新任务名称：', '新任务');
-        if (taskName === null) return;
-        const requiredStr = prompt('请输入阈值（支持小数）：', '10');
-        if (requiredStr === null) return;
-        const requiredNum = parseFloat(requiredStr);
-        if (isNaN(requiredNum)) {
-          alert('请输入正确的数字！');
-          return;
-        }
-        const unit = prompt('请输入单位(如 min / 元 / 次)：', 'min');
-        if (unit === null) return;
-        const conditionTips = `请输入完成条件:
-- above：数值 ≥ 阈值才完成
-- below：数值 < 阈值才完成`;
-        const condition = prompt(conditionTips, 'above');
-        if (condition === null) return;
-        if (condition !== 'above' && condition !== 'below') {
-          alert('只能是 above 或 below');
-          return;
-        }
+
+    // 记录按钮事件
+    document.getElementById('spendingAddBtn').addEventListener('click', function () {
+      recordYesterdayLog();
+    });
+
+    // 自动存档按钮事件
+    document.getElementById('archiveBtn').addEventListener('click', function () {
+      recordYesterdayLog();
+    });
+
+    // 添加任务事件
+    document.getElementById('addNewTaskBtn').addEventListener('click', function () {
+      const newTaskTitle = prompt('请输入任务名称:');
+      if (newTaskTitle) {
         const newTask = document.createElement('div');
         newTask.classList.add('task');
-        newTask.setAttribute('data-required', requiredNum.toString());
-        newTask.setAttribute('data-unit', unit);
-        newTask.setAttribute('data-condition', condition);
         newTask.innerHTML = `
           <div class="task-main">
-            <div class="task-title">${taskName} (${requiredNum}${unit})</div>
-            <input class="task-value" type="number" value="0" step="any" />
-            <span class="unit-label">${unit}</span>
-            <button class="add-btn">+</button>
-            <input class="checkbox" type="checkbox" />
-            <span class="checkmark">×</span>
+            <span class="task-title">${newTaskTitle}</span>
+            <input type="number" class="task-value" value="0">
+            <span class="unit-label">单位</span>
+            <input type="checkbox" class="checkbox">
+            <span class="checkmark">❌</span>
           </div>
           <div class="task-actions">
-            <button class="edit-btn">修改</button>
+            <button class="edit-btn">编辑</button>
             <button class="delete-btn">删除</button>
           </div>
         `;
-        document.getElementById('taskList').appendChild(newTask);
-        setTaskEventListeners(newTask);
-        checkAllTasksCompleted();
-        saveValues();
-      });
-      const archiveBtn = document.getElementById('archiveBtn');
-      archiveBtn.addEventListener('click', recordTodayLog);
-      const spendingAddBtn = document.getElementById('spendingAddBtn');
-      spendingAddBtn.addEventListener('click', function () {
-        const spendingValueInput = document.getElementById('spendingValue');
-        const currentValue = parseFloat(spendingValueInput.value) || 0;
-        const userInput = prompt('请输入增加的额度（支持小数）：', '0');
-        if (userInput !== null) {
-          const addValue = parseFloat(userInput);
-          if (!isNaN(addValue)) {
-            spendingValueInput.value = currentValue + addValue;
-            saveValues();
+
+        // 添加到任务列表
+        const taskList = document.getElementById('taskList');
+        taskList.appendChild(newTask);
+
+        // 编辑按钮事件
+        newTask.querySelector('.edit-btn').addEventListener('click', function () {
+          const newTitle = prompt('编辑任务名称:', newTaskTitle);
+          if (newTitle) {
+            newTask.querySelector('.task-title').textContent = newTitle;
           }
-        }
-      });
+        });
+
+        // 删除按钮事件
+        newTask.querySelector('.delete-btn').addEventListener('click', function () {
+          if (confirm('确认删除该任务吗？')) {
+            newTask.remove();
+          }
+        });
+
+        // 任务完成状态切换
+        newTask.querySelector('.checkbox').addEventListener('change', function () {
+          const checkMark = newTask.querySelector('.checkmark');
+          if (this.checked) {
+            checkMark.classList.add('complete');
+            checkMark.textContent = '✔️';
+          } else {
+            checkMark.classList.remove('complete');
+            checkMark.textContent = '❌';
+          }
+        });
+      }
+    });
+
+    // 自动存档
+    function autoArchive() {
+      recordYesterdayLog();
     }
-    window.addEventListener('DOMContentLoaded', init);
+
+    // 页面加载时，检查并显示历史记录
+    document.addEventListener('DOMContentLoaded', function () {
+      // 从localStorage中加载历史记录
+      const storedHistory = JSON.parse(localStorage.getItem('history')) || [];
+      storedHistory.forEach(log => {
+        const historyList = document.getElementById('historyList');
+        const historyEntry = document.createElement('div');
+        historyEntry.classList.add('history-entry');
+        historyEntry.textContent = log;
+        historyList.appendChild(historyEntry);
+      });
+    });
+
+    // 每日自动存档
+    setInterval(function () {
+      autoArchive();
+    }, 86400000); // 24小时自动存档
+
+    // 保存历史记录到localStorage
+    function saveHistory() {
+      const historyEntries = [];
+      const historyList = document.getElementById('historyList');
+      const entries = historyList.querySelectorAll('.history-entry');
+      entries.forEach(entry => {
+        historyEntries.push(entry.textContent);
+      });
+      localStorage.setItem('history', JSON.stringify(historyEntries));
+    }
+
+    // 保存数据至本地存储
+    window.addEventListener('beforeunload', function () {
+      saveHistory();
+    });
   </script>
 </body>
 </html>
+
